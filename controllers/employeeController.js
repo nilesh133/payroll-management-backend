@@ -75,7 +75,7 @@ exports.addEmployeeController = async (req, res) => {
         <p>Password: ${password}</p>
       </div>`;
 
-    await sendMail(email, emailSubject, '', emailHtml);
+    await sendMail(email, emailSubject, emailHtml);
 
     res.status(200).json({
       status: true,

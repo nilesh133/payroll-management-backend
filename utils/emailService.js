@@ -1,41 +1,53 @@
+const { google } = require('googleapis')
 const nodemailer = require('nodemailer');
 
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: 'nkpnilesh13@gmail.com',
-        pass: 'pkfp cors dmax cnzt'
-    }
-});
+const oAuth2Client = new google.auth.OAuth2(process.env.CLIENT_ID, process.env.CLIENT_SECRET, process.env.REDIRECT_URIS)
+oAuth2Client.setCredentials({ refresh_token: process.env.REFRESH_TOKEN })
 
-// const transporter = nodemailer.createTransport({
-//     service: 'gmail',
-//     host: 'smtp.gmail.com',
-//     port: 465,
-//     secure: true,
-//     auth: {
-//      user: 'nkpnilesh13@gmail.com',
-//     pass: 'pkfp cors dmax cnzt'
-//     },
-//    });
-
-const sendEmail = (to, subject, text, html) => {
-    console.log(to, subject, text);
-    const mailOptions = {
-        from: 'nkpnilesh@gmail.com',
-        to,
-        subject,
-        // text
-        html
-    };
-
-    transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-            console.log('Error sending email:', error);
-        } else {
-            console.log('Email sent:', info.response);
+async function sendMail(email, subject, html, cc, bcc) {
+    try {
+        const ACCESS_TOKEN = await oAuth2Client.getAccessToken()
+        const transport = nodemailer.createTransport({
+            service: "gmail",
+            auth: {
+                type: "OAuth2",
+                user: "nkpnilesh13@gmail.com",
+                clientId: process.env.CLIENT_ID,
+                clientSecret: process.env.CLIENT_SECRET,
+                refreshToken: process.env.REFRESH_TOKEN,
+                accessToken: ACCESS_TOKEN,
+            },
+        })
+        const mailOptions = {
+            from: `"Nilesh" <nkpnilesh13@gmail.com>`,
+            to: email,
+            subject: subject,
+            html: html,
         }
-    });
-};
 
-module.exports = sendEmail;
+        if(cc != undefined){
+            mailOptions["cc"] = cc
+        }
+
+        if(bcc != undefined){
+            mailOptions["bcc"] = bcc
+        }
+
+        transport.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.log('Error sending email:', error);
+            } else {
+                console.log('Email sent:', info.response);
+            }
+        });
+    } catch (err) {
+        return {
+            status: false,
+            error: {
+                errorMsg: err.message
+            },
+        }
+    }
+}
+
+module.exports = sendMail
