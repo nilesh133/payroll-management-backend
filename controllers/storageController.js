@@ -1,5 +1,7 @@
 const StorageModel = require('../models/storageModel');
 const path = require('path');
+const csv = require('csv-parser');
+const fs = require('fs');
 
 exports.uploadFileController = async (req, res) => {
   if (req.file == undefined) {
@@ -77,6 +79,42 @@ exports.getFileController = async (req, res) => {
       status: false,
       error: error.message
     });
+  }
+};
+
+exports.uploadFileControllerCSV = async (req, res) => {
+  if (req.file == undefined) {
+    return res.status(400).json({
+      status: false,
+      error: {
+        errorMsg: 'No file selected'
+      }
+    });
+  }
+
+  try {
+    const filePath = path.join(__dirname, `../public/${req.file.filename}`)
+    const result = await StorageModel.uploadFile(req.file.filename, req.file, filePath);
+
+    const csvData = []
+
+    fs.createReadStream(filePath)
+      .pipe(csv())
+      .on('data', (data) => csvData.push(data))
+      .on('end', () => {
+        fs.unlinkSync(filePath);
+        res.render('display', { data: csvData });
+      });
+
+    const storage_id = result.insertId;
+
+    // res.status(200).json({
+    //   message: 'File uploaded successfully',
+    //   storage_id: storage_id
+    // });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: error.message });
   }
 };
 

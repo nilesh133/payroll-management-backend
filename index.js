@@ -10,16 +10,22 @@ const storageRoutes = require('./routes/storageRoutes');
 const holidayRoutes = require('./routes/holidayRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
 const leavesRoutes = require('./routes/leavesRoutes');
+const scheduleEmailJob = require('./utils/schedulers/emailScheduler');
 
 require('dotenv').config()
 
 const corsOptions = {
-    origin: "*",
-    method: ["GET", "POST"]
+  origin: "*",
+  method: ["GET", "POST"]
 }
 
 app.use(cors(corsOptions));
 app.use(express.json());
+
+ // ejs
+ app.set('view engine', 'ejs');
+ app.use(express.static('public'));
+ app.set('views', path.join(__dirname, 'views'));
 
 connectDB().then(() => {
   app.use('/public', express.static(path.join(__dirname, 'public')));
@@ -33,9 +39,16 @@ connectDB().then(() => {
   app.use('/api/attendance/', attendanceRoutes);
   app.use('/api/leaves/', leavesRoutes);
 
+  app.get('/display', (req, res) => {
+    res.render('display', { title: 'Home Page' });
+  });
+  
+
+  scheduleEmailJob();
+
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
   });
 }).catch((err) => {
   console.error('Failed to connect to the database:', err);
@@ -155,7 +168,7 @@ connectDB().then(() => {
 //             SalaryModel.getRoleNameById({ role_id: role_id }, (err, results) => {
 //                 if (err) {
 //                     reject(err);
-//                 } 
+//                 }
 //                 else {
 //                     resolve(results);
 //                 }
